@@ -60,9 +60,12 @@ def build_read_only_verification(
 ) -> dict:
     legacy_after = snapshot_tree(legacy_root)
     modernized_after = snapshot_tree(modernized_root)
-    allowed_write_roots = [
-        Path(output_dir).resolve().relative_to(Path(modernized_root).resolve()).as_posix()
-    ]
+    modernized_root_path = Path(modernized_root).resolve()
+    output_dir_path = Path(output_dir).resolve()
+    allowed_write_roots = [output_dir_path.relative_to(modernized_root_path).as_posix()]
+    output_parts = output_dir_path.relative_to(modernized_root_path).parts
+    if len(output_parts) >= 3 and output_parts[0] == ".migration" and output_parts[1] == "runs":
+        allowed_write_roots.append(Path(*output_parts[:3]).as_posix())
 
     legacy_changes = _diff(before_legacy, legacy_after)
     modernized_changes = _diff(before_modernized, modernized_after)

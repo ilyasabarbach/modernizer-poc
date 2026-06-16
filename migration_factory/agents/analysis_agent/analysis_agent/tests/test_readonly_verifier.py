@@ -41,6 +41,23 @@ def test_readonly_verification_passes_for_analysis_artifact_only(tmp_path):
     assert verification["violations"] == []
 
 
+def test_readonly_verification_allows_run_owned_orchestration_artifacts(tmp_path):
+    legacy, modernized, output = _roots(tmp_path)
+    before_legacy = snapshot_tree(legacy)
+    before_modernized = snapshot_tree(modernized)
+
+    orchestration = modernized / ".migration" / "runs" / "run-1" / "orchestration"
+    orchestration.mkdir(parents=True)
+    (orchestration / "langgraph_checkpoints.sqlite").write_bytes(b"sqlite")
+
+    verification = _verify(legacy, modernized, output, before_legacy, before_modernized)
+
+    assert verification["status"] == "PASS"
+    assert verification["source_modified"] is False
+    assert verification["violations"] == []
+    assert ".migration/runs/run-1" in verification["allowed_write_roots"]
+
+
 def test_readonly_verification_fails_for_source_modification(tmp_path):
     legacy, modernized, output = _roots(tmp_path)
     before_legacy = snapshot_tree(legacy)
